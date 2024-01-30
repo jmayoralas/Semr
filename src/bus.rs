@@ -82,7 +82,9 @@ impl Bus {
 
 #[cfg(test)]
 mod test_bus {
-    use crate::device::ram::Ram;
+    use std::{cell::RefCell, rc::Rc};
+
+    use crate::{clock::Clock, device::ram::Ram};
 
     use super::{Bus, BusDevice};
 
@@ -110,7 +112,6 @@ mod test_bus {
     
     #[test]
     fn test_add_device() {
-        
         let mut bus = Bus::new();
         assert!(bus.add_device(Box::new(TestDevice::new(0x0000, 0x100))).is_ok());
         assert!(bus.add_device(Box::new(TestDevice::new(0x0000, 0x100))).is_err());
@@ -125,9 +126,10 @@ mod test_bus {
     
     #[test]
     fn test_ram() {
+        let clock = Rc::new(RefCell::new(Clock::new()));
         let mut bus = Bus::new();
-        assert!(bus.add_device(Box::new(Ram::new(0x0000, 0x100))).is_ok());
-        assert!(bus.add_device(Box::new(Ram::new(0x0100, 0x100))).is_ok());
+        assert!(bus.add_device(Box::new(Ram::new(0x0000, 0x100, Rc::clone(&clock)))).is_ok());
+        assert!(bus.add_device(Box::new(Ram::new(0x0100, 0x100, Rc::clone(&clock)))).is_ok());
         bus.write(0x0000, 0x11);
         bus.write(0x0100, 0x22);
         assert_eq!(bus.read(0x0000), 0x11);
