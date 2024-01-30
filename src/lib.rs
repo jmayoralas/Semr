@@ -1,6 +1,5 @@
-mod clock;
+pub mod clock;
 pub mod bus;
-mod device;
-
-pub use crate::clock::Clock;
-pub use crate::device::ram::Ram;
+pub mod device;
+pub mod cpu;
+pub mod screen;
