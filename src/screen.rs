@@ -2,13 +2,13 @@ use std::{cell::RefCell, rc::Rc};
 
 use crate::{bus::Bus, clock::Clock};
 
-pub struct Screen<'a> {
-    bus: &'a RefCell<Bus>,
+pub struct Screen {
+    bus: Rc<RefCell<Bus>>,
     clock: Rc<RefCell<Clock>>
 }
 
-impl<'a> Screen<'a> {
-    pub fn new(bus: &'a RefCell<Bus>, clock: Rc<RefCell<Clock>>) -> Self {
+impl Screen {
+    pub fn new(bus: Rc<RefCell<Bus>>, clock: Rc<RefCell<Clock>>) -> Self {
         Self {
             bus,
             clock
