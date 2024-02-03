@@ -16,6 +16,10 @@ impl Clock {
     pub fn read(&self) -> u32 {
         self.tics
     }
+
+    pub fn reset(&mut self) {
+        self.tics = 0;
+    }
 }
 
 #[cfg(test)]
@@ -28,5 +32,14 @@ mod test_clock {
         assert_eq!(clk.read(), 0);
         clk.add(10);
         assert_eq!(clk.read(), 10);
+    }
+
+    #[test]
+    fn reset() {
+        let mut clk = Clock::new();
+        clk.add(10);
+        assert_eq!(clk.read(), 10);
+        clk.reset();
+        assert_eq!(clk.read(), 0);
     }
 }
