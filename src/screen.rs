@@ -1,14 +1,12 @@
-use std::{cell::RefCell, rc::Rc};
-
-use crate::{bus::Bus, clock::Clock};
+use crate::cpu::{RefBus, RefClock};
 
 pub struct Screen {
-    bus: Rc<RefCell<Bus>>,
-    clock: Rc<RefCell<Clock>>
+    bus: RefBus,
+    clock: RefClock
 }
 
 impl Screen {
-    pub fn new(bus: Rc<RefCell<Bus>>, clock: Rc<RefCell<Clock>>) -> Self {
+    pub fn new(bus: RefBus, clock: RefClock) -> Self {
         Self {
             bus,
             clock
