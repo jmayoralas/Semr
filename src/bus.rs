@@ -1,8 +1,11 @@
 pub trait BusDevice {
-    fn read(&self, _address: u16) -> u8 { 0xFF }
+    fn read(&self, address: u16) -> u8 { self.peek(address) }
     fn write(&mut self, _address: u16, _value: u8) {}
     fn get_base_address(&self) -> u16;
     fn get_size(&self) -> u16;
+    fn peek(&self, _address: u16) -> u8 { 0xFF }
+    fn poke(&mut self, _address: u16, _value: u8) {}
+    fn write_vec(&mut self, _address: u16, _data: Vec<u8>) {}
 }
 
 pub struct Bus {
@@ -37,6 +40,20 @@ impl Bus {
         match self.find_mut_device(address) {
             Some(device) => device.write(address, value),
             None => (),
+        }
+    }
+
+    pub fn peek(&self, address: u16) -> u8 {
+        match self.find_device(address) {
+            Some(device) => device.peek(address),
+            None => 0xFF
+        }
+    }
+
+    pub fn write_vec(&mut self, address: u16, data: Vec<u8>) {
+        match self.find_mut_device(address) {
+            Some(device) => device.write_vec(address, data),
+            None => ()
         }
     }
 
@@ -125,7 +142,7 @@ mod test_bus {
     }
     
     #[test]
-    fn test_ram() {
+    fn test_routing() {
         let clock = Rc::new(RefCell::new(Clock::new()));
         let mut bus = Bus::new();
         assert!(bus.add_device(Box::new(Ram::new(0x0000, 0x100, Rc::clone(&clock)))).is_ok());

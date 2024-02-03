@@ -16,7 +16,7 @@ impl Screen {
     }
 
     pub fn peek_bus(&self, address: u16) {
-        println!("value: {}", self.bus.borrow().read(address));
+        println!("value: {}", self.bus.borrow().peek(address));
         println!("clock: {}", self.clock.borrow().read());
     }
 }
