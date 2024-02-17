@@ -19,37 +19,49 @@ impl CUnit {
 
     pub fn decode(&mut self, opcode: u8) -> Result<(), String> {
         // ld r,r' block
-        if opcode >> 6 == 1 {
-            self.ld_r_r(opcode);
-            return Ok(());
+        match opcode {
+            0x40..=0x7F =>{
+                if self.ld_r_r(opcode).is_ok() { return Ok(()) }
+                if self.ld_r_hl(opcode).is_ok() { return Ok(()) }
+                if self.ld_hl_r(opcode).is_ok() { return Ok(()) }
+                
+                Err(format!("Opcode {:#04X} not implemented", opcode))
+            },
+            _ => Err(format!("Opcode {:#04X} not implemented", opcode))
         }
-
-        Err(format!("Opcode {:#04X} not implemented", opcode))
     }
 
-    fn ld_r_r(&mut self, opcode: u8) {
+    fn ld_r_r(&self, opcode: u8) -> Result<(), String> {
         let dst = (opcode & 0b00111000) >> 3;
         let src = opcode & 0b00000111;
 
-        let ref_src_reg = self.get_reg(src).unwrap().clone();
-        let ref_dst_reg = self.get_reg(dst).unwrap();
-
-        *ref_dst_reg = ref_src_reg;
-
+        self.regs.main.set_reg(dst, self.regs.main.get_reg(src)?)?;
         self.clock.borrow_mut().add(1);
+
+        Ok(())
     }
-    
-    fn get_reg(&mut self, ix: u8) -> Option<&mut Box<u8>> {
-        match ix {
-            0b000 => Some(&mut self.regs.main.b),
-            0b001 => Some(&mut self.regs.main.c),
-            0b010 => Some(&mut self.regs.main.d),
-            0b011 => Some(&mut self.regs.main.e),
-            0b100 => Some(&mut self.regs.main.h),
-            0b101 => Some(&mut self.regs.main.l),
-            0b111 => Some(&mut self.regs.main.a),
-            _ => None            
+
+    fn ld_r_hl(&self, opcode: u8) -> Result<(), String> {
+        if opcode & 0b00000111 != 0b110 {
+            return Err(format!("Invalid opcode for ld_r_hl {:#04X}", opcode));
         }
-        
+        let dst = (opcode & 0b00111000) >> 3;
+
+        self.regs.main.set_reg(dst, self.bus.borrow().read(self.regs.main.hl()))?;
+        self.clock.borrow_mut().add(1);
+
+        Ok(())
+    }
+
+    fn ld_hl_r(&self, opcode: u8) -> Result<(), String> {
+        if (opcode & 0b00111000) >> 3 != 0b110 {
+            return Err(format!("Invalid opcode for ld_r_hl {:#04X}", opcode));
+        }
+        let src = opcode & 0b00000111;
+
+        self.bus.borrow_mut().write(self.regs.main.hl(), self.regs.main.get_reg(src)?);
+        self.clock.borrow_mut().add(1);
+
+        Ok(())
     }
 }
