@@ -1,110 +1,108 @@
-use std::{borrow::{Borrow, BorrowMut}, cell::RefCell};
-
 #[derive(Debug)]
 pub struct RegisterSet {
-    a: RefCell<u8>,
-    f: RefCell<u8>,
-    b: RefCell<u8>,
-    c: RefCell<u8>,
-    d: RefCell<u8>,
-    e: RefCell<u8>,
-    h: RefCell<u8>,
-    l: RefCell<u8>,
+    a: u8,
+    f: u8,
+    b: u8,
+    c: u8,
+    d: u8,
+    e: u8,
+    h: u8,
+    l: u8,
 }
 
 impl RegisterSet {
     fn new() -> Self {
         Self {
-            a: RefCell::new(0),
-            f: RefCell::new(0),
-            b: RefCell::new(0),
-            c: RefCell::new(0),
-            d: RefCell::new(0),
-            e: RefCell::new(0),
-            h: RefCell::new(0),
-            l: RefCell::new(0),
+            a: 0,
+            f: 0,
+            b: 0,
+            c: 0,
+            d: 0,
+            e: 0,
+            h: 0,
+            l: 0,
         }
     }
 
     pub fn a(&self) -> u8 {
-        *self.a.borrow()
+        self.a
     }
     pub fn f(&self) -> u8 {
-        *self.f.borrow()
+        self.f
     }
     pub fn b(&self) -> u8 {
-        *self.b.borrow()
+        self.b
     }
     pub fn c(&self) -> u8 {
-        *self.c.borrow()
+        self.c
     }
     pub fn d(&self) -> u8 {
-        *self.d.borrow()
+        self.d
     }
     pub fn e(&self) -> u8 {
-        *self.e.borrow()
+        self.e
     }
     pub fn h(&self) -> u8 {
-        *self.h.borrow()
+        self.h
     }
     pub fn l(&self) -> u8 {
-        *self.l.borrow()
+        self.l
     }
-    pub fn set_a(&self, value: u8) {
-        *self.a.borrow_mut() = value;
+    pub fn set_a(&mut self, value: u8) {
+        self.a = value;
     }
-    pub fn set_f(&self, value: u8) {
-        *self.f.borrow_mut() = value;
+    pub fn set_f(&mut self, value: u8) {
+        self.f = value;
     }
-    pub fn set_b(&self, value: u8) {
-        *self.b.borrow_mut() = value;
+    pub fn set_b(&mut self, value: u8) {
+        self.b = value;
     }
-    pub fn set_c(&self, value: u8) {
-        *self.c.borrow_mut() = value;
+    pub fn set_c(&mut self, value: u8) {
+        self.c = value;
     }
-    pub fn set_d(&self, value: u8) {
-        *self.d.borrow_mut() = value;
+    pub fn set_d(&mut self, value: u8) {
+        self.d = value;
     }
-    pub fn set_e(&self, value: u8) {
-        *self.e.borrow_mut() = value;
+    pub fn set_e(&mut self, value: u8) {
+        self.e = value;
     }
-    pub fn set_h(&self, value: u8) {
-        *self.h.borrow_mut() = value;
+    pub fn set_h(&mut self, value: u8) {
+        self.h = value;
     }
-    pub fn set_l(&self, value: u8) {
-        *self.l.borrow_mut() = value;
+    pub fn set_l(&mut self, value: u8) {
+        self.l = value;
     }
 
     pub fn af(&self) -> u16 {
-        (*self.a.borrow() as u16) << 8 | *self.f.borrow() as u16
+        (self.a as u16) << 8 | self.f as u16
     }
-    pub fn set_af(&self, value: u16) {
-        *self.a.borrow_mut() = (value >> 8) as u8;
-        *self.f.borrow_mut() = (value & 0x00FF) as u8;
+    pub fn set_af(&mut self, value: u16) {
+        self.a = (value >> 8) as u8;
+        self.f = (value & 0x00FF) as u8;
     }
     pub fn bc(&self) -> u16 {
-        (*self.b.borrow() as u16) << 8 | *self.c.borrow() as u16
+        (self.b as u16) << 8 | self.c as u16
     }
-    pub fn set_bc(&self, value: u16) {
-        *self.b.borrow_mut() = (value >> 8) as u8;
-        *self.c.borrow_mut() = (value & 0x00FF) as u8;
+    pub fn set_bc(&mut self, value: u16) {
+        self.b = (value >> 8) as u8;
+        self.c = (value & 0x00FF) as u8;
     }
     pub fn de(&self) -> u16 {
-        (*self.d.borrow() as u16) << 8 | *self.e.borrow() as u16
+        (self.d as u16) << 8 | self.e as u16
     }
-    pub fn set_de(&self, value: u16) {
-        *self.d.borrow_mut() = (value >> 8) as u8;
-        *self.e.borrow_mut() = (value & 0x00FF) as u8;
+    pub fn set_de(&mut self, value: u16) {
+        self.d = (value >> 8) as u8;
+        self.e = (value & 0x00FF) as u8;
     }
     pub fn hl(&self) -> u16 {
-        (*self.h.borrow() as u16) << 8 | *self.l.borrow() as u16
+        (self.h as u16) << 8 | self.l as u16
     }
-    pub fn set_hl(&self, value: u16) {
-        *self.h.borrow_mut() = (value >> 8) as u8;
-        *self.l.borrow_mut() = (value & 0x00FF) as u8;
+    pub fn set_hl(&mut self, value: u16) {
+        self.h = (value >> 8) as u8;
+        self.l = (value & 0x00FF) as u8;
     }
 
-    pub fn set_reg(&self, ix: u8, value: u8) -> Result<(), String> {
+    pub fn set_reg(&mut self, ix: u8, value: u8) -> Result<(), String> {
         match ix {
             0b000 => {self.set_b(value); Ok(())},
             0b001 => {self.set_c(value); Ok(())},

@@ -24,14 +24,14 @@ impl CUnit {
                 if self.ld_r_r(opcode).is_ok() { return Ok(()) }
                 if self.ld_r_hl(opcode).is_ok() { return Ok(()) }
                 if self.ld_hl_r(opcode).is_ok() { return Ok(()) }
-                
+
                 Err(format!("Opcode {:#04X} not implemented", opcode))
             },
             _ => Err(format!("Opcode {:#04X} not implemented", opcode))
         }
     }
 
-    fn ld_r_r(&self, opcode: u8) -> Result<(), String> {
+    fn ld_r_r(&mut self, opcode: u8) -> Result<(), String> {
         let dst = (opcode & 0b00111000) >> 3;
         let src = opcode & 0b00000111;
 
@@ -41,7 +41,7 @@ impl CUnit {
         Ok(())
     }
 
-    fn ld_r_hl(&self, opcode: u8) -> Result<(), String> {
+    fn ld_r_hl(&mut self, opcode: u8) -> Result<(), String> {
         if opcode & 0b00000111 != 0b110 {
             return Err(format!("Invalid opcode for ld_r_hl {:#04X}", opcode));
         }
