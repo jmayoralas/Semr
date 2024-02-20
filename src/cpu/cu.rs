@@ -25,9 +25,13 @@ impl CUnit {
     }
 
     pub fn decode(&mut self, opcode: u8) -> Result<(), String> {
-        // ld r,r' block
+        if opcode & 0b11000111 == 0b110 {
+            if self.ld_r_n(opcode).is_ok() { return Ok(()) }
+        }
+
         match opcode {
             0x00 => { self.nop(); Ok(()) }
+            0x36 => { self.ld_hl_n(); Ok(()) }
             0x40..=0x7F =>{
                 if self.halt(opcode).is_ok() { return Ok(()) }
                 if self.ld_r_r(opcode).is_ok() { return Ok(()) }
@@ -76,6 +80,28 @@ impl CUnit {
         self.clock.borrow_mut().add(1);
         
         Ok(())
+    }
+    
+    fn ld_r_n(&mut self, opcode: u8) -> Result<(), String> {
+        let dst = (opcode & 0b00111000) >> 3;
+
+        if opcode & 0b00000111 != 0b110 || dst == 0b110 {
+            return Err(format!("Invalid opcode for ld_r_n {:#04X}", opcode));
+        }
+        
+        self.regs.main.set_reg(dst, self.bus.borrow().read(self.regs.pc))?;
+        self.regs.pc += 1;
+
+        self.clock.borrow_mut().add(1);
+
+        Ok(())
+    }
+
+    fn ld_hl_n(&mut self) {
+        let value = self.bus.borrow().read(self.regs.pc);
+        self.bus.borrow_mut().write(self.regs.main.hl(), value);
+        self.regs.pc += 1;
+        self.clock.borrow_mut().add(1);
     }
     
     fn halt(&mut self, opcode: u8) -> Result<(), String>{
