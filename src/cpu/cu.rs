@@ -7,11 +7,17 @@ pub enum Status {
     Halted
 }
 
+pub enum IndexedAddressMode {
+    IX,
+    IY
+}
+
 pub struct CUnit {
     pub regs: Registers,
     bus: RefBus,
     clock: RefClock,
-    pub status: Status
+    pub status: Status,
+    pub address_mode: Option<IndexedAddressMode>,
 }
 
 impl CUnit {
@@ -20,7 +26,28 @@ impl CUnit {
             regs,
             bus,
             clock,
-            status: Status::Running
+            status: Status::Running,
+            address_mode: None,
+        }
+    }
+
+    fn get_address_by_address_mode(&mut self) -> u16 {
+        match &self.address_mode {
+            None => {
+                self.regs.main.hl()
+            }
+            Some(mode) => {
+                let base_address = match mode {
+                    IndexedAddressMode::IX => self.regs.ix,
+                    IndexedAddressMode::IY => self.regs.iy
+                };
+
+                let d = self.bus.borrow().read(self.regs.pc) as i8;
+                self.regs.pc += 1;
+
+                self.clock.borrow_mut().add(2);
+                base_address.wrapping_add(d as u16)
+            }
         }
     }
 
@@ -39,13 +66,24 @@ impl CUnit {
                 if self.ld_hl_r(opcode).is_ok() { return Ok(()) }
 
                 Err(format!("Opcode {:#04X} not implemented", opcode))
-            },
+            }
+            0xDD => {
+                self.address_mode = Some(IndexedAddressMode::IX);
+                self.clock.borrow_mut().add(1);
+                Ok(())
+            }
+            0xFD => {
+                self.address_mode = Some(IndexedAddressMode::IY);
+                self.clock.borrow_mut().add(1);
+                Ok(())
+            }
             _ => Err(format!("Opcode {:#04X} not implemented", opcode))
         }
     }
 
-    fn nop(&self) {
+    fn nop(&mut self) {
         self.clock.borrow_mut().add(1);
+        self.address_mode = None;
     }
 
     fn ld_r_r(&mut self, opcode: u8) -> Result<(), String> {
@@ -54,6 +92,7 @@ impl CUnit {
 
         self.regs.main.set_reg(dst, self.regs.main.get_reg(src)?)?;
         self.clock.borrow_mut().add(1);
+        self.address_mode = None;
 
         Ok(())
     }
@@ -62,23 +101,29 @@ impl CUnit {
         if opcode & 0b00000111 != 0b110 {
             return Err(format!("Invalid opcode for ld_r_hl {:#04X}", opcode));
         }
+        
         let dst = (opcode & 0b00111000) >> 3;
-
-        self.regs.main.set_reg(dst, self.bus.borrow().read(self.regs.main.hl()))?;
-        self.clock.borrow_mut().add(1);
+        let address = self.get_address_by_address_mode();
+        
+        self.regs.main.set_reg(dst, self.bus.borrow().read(address))?;
+        self.clock.borrow_mut().add(if self.address_mode.is_some() { 4 } else { 1 });
+        self.address_mode = None;
 
         Ok(())
     }
-
-    fn ld_hl_r(&self, opcode: u8) -> Result<(), String> {
+    
+    fn ld_hl_r(&mut self, opcode: u8) -> Result<(), String> {
         if (opcode & 0b00111000) >> 3 != 0b110 {
             return Err(format!("Invalid opcode for ld_r_hl {:#04X}", opcode));
         }
+        
         let src = opcode & 0b00000111;
+        let address = self.get_address_by_address_mode();
         
-        self.bus.borrow_mut().write(self.regs.main.hl(), self.regs.main.get_reg(src)?);
-        self.clock.borrow_mut().add(1);
-        
+        self.bus.borrow_mut().write(address, self.regs.main.get_reg(src)?);
+        self.clock.borrow_mut().add(if self.address_mode.is_some() { 4 } else { 1 });
+        self.address_mode = None;
+
         Ok(())
     }
     
@@ -93,15 +138,17 @@ impl CUnit {
         self.regs.pc += 1;
 
         self.clock.borrow_mut().add(1);
-
+        self.address_mode = None;
         Ok(())
     }
 
     fn ld_hl_n(&mut self) {
+        let address = self.get_address_by_address_mode();
         let value = self.bus.borrow().read(self.regs.pc);
-        self.bus.borrow_mut().write(self.regs.main.hl(), value);
         self.regs.pc += 1;
+        self.bus.borrow_mut().write(address, value);
         self.clock.borrow_mut().add(1);
+        self.address_mode = None;
     }
     
     fn halt(&mut self, opcode: u8) -> Result<(), String>{
@@ -110,7 +157,7 @@ impl CUnit {
         }
         self.status = Status::Halted;
         self.clock.borrow_mut().add(1);
-
+        self.address_mode = None;
         Ok(())
     }
 }

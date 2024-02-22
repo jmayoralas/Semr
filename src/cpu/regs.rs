@@ -136,6 +136,8 @@ pub struct Registers {
     pub alt: RegisterSet,
     pub pc: u16,
     pub sp: u16,
+    pub ix: u16,
+    pub iy: u16,
 }
 
 impl Registers {
@@ -145,6 +147,8 @@ impl Registers {
             alt: RegisterSet::new(),
             pc: 0,
             sp: 0,
+            ix: 0,
+            iy: 0,
         }
     }
 }
