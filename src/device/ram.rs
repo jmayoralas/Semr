@@ -52,6 +52,11 @@ impl BusDevice for Ram {
             self.poke(address + i as u16, *value)
         }
     }
+
+    fn read_word(&self, address: u16) -> u16 {
+        let data = (self.read(address - self.base_address + 1) as u16) << 8;
+        data + self.read(address - self.base_address) as u16
+    }
 }
 
 #[cfg(test)]
@@ -95,5 +100,14 @@ mod test_ram {
         assert_eq!(ram.peek(0x0002), 0x03);
         assert_eq!(ram.peek(0x0003), 0xFF);
         assert_eq!(ram.peek(0x0004), 0);
+    }
+    
+    #[test]
+    fn test_read_word() {
+        let (mut ram, clock) = init();
+        
+        ram.write_vec(0x0000, vec![0x34, 0x12]);
+        assert_eq!(ram.read_word(0x0000), 0x1234);
+        assert_eq!(clock.borrow().read(), 6);
     }
 }

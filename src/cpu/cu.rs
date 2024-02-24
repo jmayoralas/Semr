@@ -31,10 +31,6 @@ impl CUnit {
         }
     }
 
-    fn read_little_endian_u16(&self, address: u16) -> u16 {
-        (self.bus.borrow().read(address + 1) as u16) << 8 + self.bus.borrow().read(address) as u16
-    }
-
     fn get_address_by_address_mode(&mut self) -> u16 {
         match &self.address_mode {
             None => {
@@ -175,7 +171,7 @@ impl CUnit {
     }
 
     fn ld_nn_a(&mut self) {
-        let address = self.read_little_endian_u16(self.regs.pc);
+        let address = self.bus.borrow().read_word(self.regs.pc);
         self.regs.pc += 2;
         self.bus.borrow_mut().write(address, self.regs.main.a());
         self.clock.borrow_mut().add(1);
@@ -192,7 +188,7 @@ impl CUnit {
     }
 
     fn ld_a_nn(&mut self) {
-        self.regs.main.set_a(self.bus.borrow().read(self.read_little_endian_u16(self.regs.pc)));
+        self.regs.main.set_a(self.bus.borrow().read(self.bus.borrow().read_word(self.regs.pc)));
         self.regs.pc += 2;
         self.clock.borrow_mut().add(1);
     }

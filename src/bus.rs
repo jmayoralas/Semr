@@ -6,6 +6,7 @@ pub trait BusDevice {
     fn peek(&self, _address: u16) -> u8 { 0xFF }
     fn poke(&mut self, _address: u16, _value: u8) {}
     fn write_vec(&mut self, _address: u16, _data: Vec<u8>) {}
+    fn read_word(&self, _address: u16) -> u16 { 0xFFFF }
 }
 
 pub struct Bus {
@@ -55,6 +56,13 @@ impl Bus {
             Some(device) => device.write_vec(address, data),
             None => ()
         }
+    }
+    
+    pub fn read_word(&self, address: u16) -> u16 {
+        match self.find_device(address) {
+            Some(device) => device.read_word(address),
+            None => 0xFFFF
+        }   
     }
 
     fn find_device(&self, address: u16) -> Option<&Box<dyn BusDevice>> {
