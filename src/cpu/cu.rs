@@ -93,7 +93,6 @@ impl CUnit {
 
     fn nop(&mut self) {
         self.clock.borrow_mut().add(1);
-        self.address_mode = None;
     }
 
     fn ld_r_r(&mut self, opcode: u8) -> Result<(), String> {
@@ -102,7 +101,6 @@ impl CUnit {
 
         self.regs.main.set_reg(dst, self.regs.main.get_reg(src)?)?;
         self.clock.borrow_mut().add(1);
-        self.address_mode = None;
 
         Ok(())
     }
@@ -117,7 +115,6 @@ impl CUnit {
         
         self.regs.main.set_reg(dst, self.bus.borrow().read(address))?;
         self.clock.borrow_mut().add(if self.address_mode.is_some() { 4 } else { 1 });
-        self.address_mode = None;
 
         Ok(())
     }
@@ -132,7 +129,6 @@ impl CUnit {
         
         self.bus.borrow_mut().write(address, self.regs.main.get_reg(src)?);
         self.clock.borrow_mut().add(if self.address_mode.is_some() { 4 } else { 1 });
-        self.address_mode = None;
 
         Ok(())
     }
@@ -148,7 +144,6 @@ impl CUnit {
         self.regs.pc += 1;
 
         self.clock.borrow_mut().add(1);
-        self.address_mode = None;
         Ok(())
     }
 
@@ -158,7 +153,6 @@ impl CUnit {
         self.regs.pc += 1;
         self.bus.borrow_mut().write(address, value);
         self.clock.borrow_mut().add(1);
-        self.address_mode = None;
     }
     
     fn halt(&mut self, opcode: u8) -> Result<(), String>{
@@ -167,20 +161,17 @@ impl CUnit {
         }
         self.status = Status::Halted;
         self.clock.borrow_mut().add(1);
-        self.address_mode = None;
         Ok(())
     }
     
     fn ld_bc_a(&mut self) {
         self.bus.borrow_mut().write(self.regs.main.bc(), self.regs.main.a());
         self.clock.borrow_mut().add(1);
-        self.address_mode = None;
     }
 
     fn ld_de_a(&mut self) {
         self.bus.borrow_mut().write(self.regs.main.de(), self.regs.main.a());
         self.clock.borrow_mut().add(1);
-        self.address_mode = None;
     }
 
     fn ld_nn_a(&mut self) {
@@ -188,25 +179,21 @@ impl CUnit {
         self.regs.pc += 2;
         self.bus.borrow_mut().write(address, self.regs.main.a());
         self.clock.borrow_mut().add(1);
-        self.address_mode = None;
     }
 
     fn ld_a_bc(&mut self) {
         self.regs.main.set_a(self.bus.borrow().read(self.regs.main.bc()));
         self.clock.borrow_mut().add(1);
-        self.address_mode = None;
     }
 
     fn ld_a_de(&mut self) {
         self.regs.main.set_a(self.bus.borrow().read(self.regs.main.de()));
         self.clock.borrow_mut().add(1);
-        self.address_mode = None;
     }
 
     fn ld_a_nn(&mut self) {
         self.regs.main.set_a(self.bus.borrow().read(self.read_little_endian_u16(self.regs.pc)));
         self.regs.pc += 2;
         self.clock.borrow_mut().add(1);
-        self.address_mode = None;
     }
 }

@@ -33,6 +33,7 @@ impl Cpu {
     }
     
     pub fn execute(&mut self) -> Result<(), String> {
+        let mut reset_address_mode = false;
         loop {
             let mut opcode = self.fetch_op();
             
@@ -44,8 +45,14 @@ impl Cpu {
     
             self.cu.decode(opcode)?;
             
-            if self.cu.address_mode.is_none() {
+            if reset_address_mode {
+                self.cu.address_mode = None;
                 break;
+            }
+
+            match self.cu.address_mode {
+                None => break,
+                Some(_) => reset_address_mode = true
             }
         }
 
