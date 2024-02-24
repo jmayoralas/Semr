@@ -343,4 +343,82 @@ mod test_cpu {
         assert_eq!(cpu.clock.borrow().read(), 19);
         assert_eq!(cpu.bus.borrow().peek(0x101), 0xAA);
     }
+    
+    #[test]
+    fn test_ld_a_bc() {
+        let mut cpu = init();
+        cpu.bus.borrow_mut().write_vec(0x0000, vec![0x0A]);
+        cpu.bus.borrow_mut().write_vec(0x0100, vec![0xBB]);
+        cpu.cu.regs.main.set_bc(0x0100);
+
+        let res = cpu.execute(); // ld a,(bc)
+        assert!(res.is_ok(), "{:?}", res);
+        assert_eq!(cpu.clock.borrow().read(), 7);
+        assert_eq!(cpu.cu.regs.main.a(), 0xBB);
+    }
+
+    #[test]
+    fn test_ld_a_de() {
+        let mut cpu = init();
+        cpu.bus.borrow_mut().write_vec(0x0000, vec![0x1A]);
+        cpu.bus.borrow_mut().write_vec(0x0100, vec![0xBB]);
+        cpu.cu.regs.main.set_de(0x0100);
+
+        let res = cpu.execute(); // ld a,(bc)
+        assert!(res.is_ok(), "{:?}", res);
+        assert_eq!(cpu.clock.borrow().read(), 7);
+        assert_eq!(cpu.cu.regs.main.a(), 0xBB);
+    }
+
+    #[test]
+    fn test_ld_a_nn() {
+        let mut cpu = init();
+        cpu.bus.borrow_mut().write_vec(0x0000, vec![0x3A, 0x00, 0x01]);
+        cpu.bus.borrow_mut().write_vec(0x0100, vec![0xBB]);
+
+        let res = cpu.execute(); // ld a,(bc)
+        assert!(res.is_ok(), "{:?}", res);
+        assert_eq!(cpu.clock.borrow().read(), 13);
+        assert_eq!(cpu.cu.regs.main.a(), 0xBB);
+        assert_eq!(cpu.cu.regs.pc, 0x0003);
+    }
+
+    #[test]
+    fn test_ld_bc_a() {
+        let mut cpu = init();
+        cpu.bus.borrow_mut().write_vec(0x0000, vec![0x02]);
+        cpu.cu.regs.main.set_bc(0x0100);
+        cpu.cu.regs.main.set_a(0xBB);
+
+        let res = cpu.execute(); // ld a,(bc)
+        assert!(res.is_ok(), "{:?}", res);
+        assert_eq!(cpu.clock.borrow().read(), 7);
+        assert_eq!(cpu.bus.borrow().peek(cpu.cu.regs.main.bc()), 0xBB);
+    }
+
+    #[test]
+    fn test_ld_de_a() {
+        let mut cpu = init();
+        cpu.bus.borrow_mut().write_vec(0x0000, vec![0x12]);
+        cpu.cu.regs.main.set_de(0x0100);
+        cpu.cu.regs.main.set_a(0xBB);
+
+        let res = cpu.execute(); // ld a,(bc)
+        assert!(res.is_ok(), "{:?}", res);
+        assert_eq!(cpu.clock.borrow().read(), 7);
+        assert_eq!(cpu.bus.borrow().peek(cpu.cu.regs.main.de()), 0xBB);
+    }
+
+    #[test]
+    fn test_ld_nn_a() {
+        let mut cpu = init();
+        cpu.bus.borrow_mut().write_vec(0x0000, vec![0x32, 0x00, 0x01]);
+        cpu.cu.regs.main.set_a(0xBB);
+
+        let res = cpu.execute(); // ld a,(bc)
+        assert!(res.is_ok(), "{:?}", res);
+        assert_eq!(cpu.clock.borrow().read(), 13);
+        assert_eq!(cpu.bus.borrow().peek(0x100), 0xBB);
+        assert_eq!(cpu.cu.regs.pc, 0x0003);
+    }
 }
