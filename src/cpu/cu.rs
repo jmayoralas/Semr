@@ -18,6 +18,7 @@ pub struct CUnit {
     clock: RefClock,
     pub status: Status,
     pub address_mode: Option<IndexedAddressMode>,
+    pub prefix: Option<u8>,
 }
 
 impl CUnit {
@@ -28,6 +29,7 @@ impl CUnit {
             clock,
             status: Status::Running,
             address_mode: None,
+            prefix: None,
         }
     }
 
@@ -52,39 +54,69 @@ impl CUnit {
     }
 
     pub fn decode(&mut self, opcode: u8) -> Result<(), String> {
+        match self.prefix {
+            None => self.decode_prefix_none(opcode),
+            Some(0xDD) => self.decode_prefix_none(opcode),
+            Some(0xFD) => self.decode_prefix_none(opcode),
+            Some(0xED) => self.decode_prefix_ed(opcode),
+            Some(prefix) => Err(format!("Prefix {:#04X} not implemented", prefix)),
+        }
+    }
+
+    fn decode_prefix_none(&mut self, opcode: u8) -> Result<(), String> {
+        let reset_prefix = self.prefix.is_some();
+
         if opcode & 0b11000111 == 0b110 {
             if self.ld_r_n(opcode).is_ok() { return Ok(()) }
         }
 
         match opcode {
-            0x00 => { self.nop(); Ok(()) }
-            0x02 => { self.ld_bc_a(); Ok(()) }
-            0x0A => { self.ld_a_bc(); Ok(()) }
-            0x12 => { self.ld_de_a(); Ok(()) }
-            0x1A => { self.ld_a_de(); Ok(()) }
-            0x32 => { self.ld_nn_a(); Ok(()) }
-            0x36 => { self.ld_hl_n(); Ok(()) }
-            0x3A => { self.ld_a_nn(); Ok(()) }
+            0x00 => self.nop(),
+            0x02 => self.ld_bc_a(),
+            0x0A => self.ld_a_bc(),
+            0x12 => self.ld_de_a(),
+            0x1A => self.ld_a_de(),
+            0x32 => self.ld_nn_a(),
+            0x36 => self.ld_hl_n(),
+            0x3A => self.ld_a_nn(),
             0x40..=0x7F =>{
-                if self.halt(opcode).is_ok() { return Ok(()) }
-                if self.ld_r_r(opcode).is_ok() { return Ok(()) }
-                if self.ld_r_hl(opcode).is_ok() { return Ok(()) }
-                if self.ld_hl_r(opcode).is_ok() { return Ok(()) }
-
-                Err(format!("Opcode {:#04X} not implemented", opcode))
+                if self.halt(opcode).is_err() {
+                    if self.ld_r_r(opcode).is_err() {
+                        if self.ld_r_hl(opcode).is_err() {
+                            if self.ld_hl_r(opcode).is_err() {
+                                return Err(format!("Opcode {:#04X} not implemented", opcode))
+                            }
+                        }
+                    }
+                }
             }
             0xDD => {
+                self.prefix = Some(opcode);
                 self.address_mode = Some(IndexedAddressMode::IX);
                 self.clock.borrow_mut().add(1);
-                Ok(())
+            }
+            0xED => {
+                self.prefix = Some(opcode);
+                self.clock.borrow_mut().add(1);
             }
             0xFD => {
+                self.prefix = Some(opcode);
                 self.address_mode = Some(IndexedAddressMode::IY);
                 self.clock.borrow_mut().add(1);
-                Ok(())
             }
-            _ => Err(format!("Opcode {:#04X} not implemented", opcode))
+            _ => return Err(format!("Opcode {:#04X} not implemented", opcode))
         }
+
+        if reset_prefix {
+            self.address_mode = None;
+            self.prefix = None;
+        }
+
+        Ok(())
+    }
+
+    fn decode_prefix_ed(&mut self, opcode: u8) -> Result<(), String> {
+        Err(format!("ED prefixed opcode {:#04X} not implemented", opcode))
     }
 
     fn nop(&mut self) {

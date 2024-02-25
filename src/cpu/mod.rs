@@ -27,13 +27,12 @@ impl Cpu {
 
     pub fn reset(&mut self) {
         self.cu.regs.pc = 0;
-        self.cu.address_mode = None;
+        self.cu.prefix = None;
         self.cu.status = Status::Running;
         self.clock.borrow_mut().reset();
     }
     
     pub fn execute(&mut self) -> Result<(), String> {
-        let mut reset_address_mode = false;
         loop {
             let mut opcode = self.fetch_op();
             
@@ -45,14 +44,8 @@ impl Cpu {
     
             self.cu.decode(opcode)?;
             
-            if reset_address_mode {
-                self.cu.address_mode = None;
+            if self.cu.prefix.is_none() {
                 break;
-            }
-
-            match self.cu.address_mode {
-                None => break,
-                Some(_) => reset_address_mode = true
             }
         }
 
