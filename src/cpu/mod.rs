@@ -423,4 +423,35 @@ mod test_cpu {
         assert_eq!(cpu.bus.borrow().peek(0x100), 0xBB);
         assert_eq!(cpu.cu.regs.pc, 0x0003);
     }
+    
+    #[test]
+    fn test_ld_a_i() {
+        let mut cpu = init();
+        cpu.bus.borrow_mut().write_vec(0x0000, vec![0xED, 0x57, 0xED, 0x57, 0xED, 0x57]);
+        cpu.cu.regs.main.set_f(0b11111111);
+        
+        cpu.cu.regs.i = 0x55;
+        let res = cpu.execute();
+        assert!(res.is_ok(), "{:?}", res);
+        assert_eq!(cpu.cu.regs.main.a(), 0x55);
+        assert_eq!(cpu.clock.borrow().read(), 9);
+        assert_eq!(cpu.cu.regs.pc, 0x0002);
+        assert_eq!(cpu.cu.regs.main.f(), 0b00101001);
+        
+        cpu.cu.regs.i = 0x00;
+        let res = cpu.execute();
+        assert!(res.is_ok(), "{:?}", res);
+        assert_eq!(cpu.cu.regs.main.a(), 0x00);
+        assert_eq!(cpu.clock.borrow().read(), 18);
+        assert_eq!(cpu.cu.regs.pc, 0x0004);
+        assert_eq!(cpu.cu.regs.main.f(), 0b01101001);
+
+        cpu.cu.regs.i = 0xFE;
+        let res = cpu.execute();
+        assert!(res.is_ok(), "{:?}", res);
+        assert_eq!(cpu.cu.regs.main.a(), 0xFE);
+        assert_eq!(cpu.clock.borrow().read(), 27);
+        assert_eq!(cpu.cu.regs.pc, 0x0006);
+        assert_eq!(cpu.cu.regs.main.f(), 0b10101001);
+    }
 }

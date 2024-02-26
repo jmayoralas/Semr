@@ -1,5 +1,4 @@
-use crate::cpu::regs::Registers;
-
+use crate::cpu::regs::{Registers, Flag};
 use super::{RefBus, RefClock};
 
 pub enum Status {
@@ -116,7 +115,14 @@ impl CUnit {
     }
 
     fn decode_prefix_ed(&mut self, opcode: u8) -> Result<(), String> {
-        Err(format!("ED prefixed opcode {:#04X} not implemented", opcode))
+        match opcode {
+            0x57 => self.ld_a_i(),
+            _ => return Err(format!("ED prefixed opcode {:#04X} not implemented", opcode))
+        }
+
+        self.prefix = None;
+
+        Ok(())
     }
 
     fn nop(&mut self) {
@@ -223,5 +229,15 @@ impl CUnit {
         self.regs.main.set_a(self.bus.borrow().read(self.bus.borrow().read_word(self.regs.pc)));
         self.regs.pc += 2;
         self.clock.borrow_mut().add(1);
+    }
+    
+    fn ld_a_i(&mut self) {
+        self.regs.main.set_a(self.regs.i);
+        self.clock.borrow_mut().add(2);
+        if self.regs.i & 0b10000000 > 0 { self.regs.main.set_flag(Flag::S) } else { self.regs.main.reset_flag(Flag::S) }
+        if self.regs.i == 0 { self.regs.main.set_flag(Flag::Z) } else { self.regs.main.reset_flag(Flag::Z) }
+        self.regs.main.reset_flag(Flag::H);
+        if self.regs.iff2 { self.regs.main.set_flag(Flag::PV) } else { self.regs.main.reset_flag(Flag::PV) }
+        self.regs.main.reset_flag(Flag::N);
     }
 }
