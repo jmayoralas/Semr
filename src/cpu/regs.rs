@@ -1,3 +1,20 @@
+pub enum Flag {
+    S,Z,H,PV,N,C
+}
+
+impl Flag {
+    fn get_bit(&self) -> u8 {
+        match self {
+            Flag::S => 7,
+            Flag::Z => 6,
+            Flag::H => 4,
+            Flag::PV => 2,
+            Flag::N => 1,
+            Flag::C => 0,
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct RegisterSet {
     a: u8,
@@ -128,6 +145,15 @@ impl RegisterSet {
         }
     }
 
+    pub fn set_flag(&mut self, flag: Flag) {
+        let mask = (1 as u8) << flag.get_bit();
+        self.f |= mask;
+    }
+
+    pub fn reset_flag(&mut self, flag: Flag) {
+        let mask = (1 as u8) << flag.get_bit();
+        self.f &= !mask;
+    }
 }
 
 #[derive(Debug)]
@@ -169,5 +195,28 @@ mod test_register {
         assert_eq!(bank.alt.h(), 0xcc);
         assert_eq!(bank.alt.l(), 0xbb);
         assert_eq!(bank.pc, 0x1234);
+    }
+
+    #[test]
+    fn test_flag() {
+        let mut bank = Registers::new();
+        bank.main.set_flag(super::Flag::S);
+        assert_eq!(bank.main.f(), 0b10000000);
+        bank.main.set_flag(super::Flag::Z);
+        assert_eq!(bank.main.f(), 0b11000000);
+
+        bank.main.reset_flag(super::Flag::Z);
+        assert_eq!(bank.main.f(), 0b10000000);
+        bank.main.reset_flag(super::Flag::S);
+        assert_eq!(bank.main.f(), 0b00000000);
+        
+        bank.main.set_flag(super::Flag::H);
+        bank.main.set_flag(super::Flag::PV);
+        bank.main.set_flag(super::Flag::N);
+        bank.main.set_flag(super::Flag::C);
+        assert_eq!(bank.main.f(), 0b00010111);
+        
+        bank.main.reset_flag(super::Flag::PV);
+        assert_eq!(bank.main.f(), 0b00010011);
     }
 }
