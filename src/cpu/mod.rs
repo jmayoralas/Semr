@@ -26,6 +26,8 @@ impl Cpu {
     }
 
     pub fn reset(&mut self) {
+        self.cu.regs.iff1 = false;
+        self.cu.regs.iff2 = false;
         self.cu.regs.pc = 0;
         self.cu.prefix = None;
         self.cu.status = Status::Running;

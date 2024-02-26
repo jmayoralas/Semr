@@ -164,6 +164,10 @@ pub struct Registers {
     pub sp: u16,
     pub ix: u16,
     pub iy: u16,
+    pub i: u8,
+    pub r: u8,
+    pub iff1: bool,
+    pub iff2: bool
 }
 
 impl Registers {
@@ -175,6 +179,10 @@ impl Registers {
             sp: 0,
             ix: 0,
             iy: 0,
+            i: 0,
+            r: 0,
+            iff1: false,
+            iff2: false,
         }
     }
 }
